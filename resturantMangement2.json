@@ -1,0 +1,904 @@
+{
+  "name": "resturantMangement2",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "ed695431-bc69-4170-8b70-c8bb5f4768f3",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -784,
+        96
+      ],
+      "webhookId": "07fcb9ac-68c3-4bd2-ab70-9a89a84675fe",
+      "credentials": {
+        "telegramApi": {
+          "id": "xHW5FK4259o9wvAD",
+          "name": "kdresturant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "###ROLE\n** You are my restaurant customer support manager. Your role is\nto route user message to one of your employees.\n\n###EMPLOYEES\n** Questions Expert: If the user has any questions about our\nmenu or the restaurant.\n** Orders Expert: If the user wants to make or cancel an order.\nIf the user provides his information. If the user has any\nquestion about his order. If the user has chosen a specific\norder or items. If the user provides the order ID.\n** Generalist: If the user sent a general message (e.g. Hi,\nGood morning)\n\n###OUTPUT EXAMPLE\n{\n\"employee\": \"Questions Expert\"\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "9fb9bb21-7b7b-4ed3-8ac3-2b1cc5dc05da",
+      "name": "Basic LLM Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -560,
+        96
+      ],
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "cohere/north-mini-code:free",
+        "options": {}
+      },
+      "id": "26bc6c55-a0c5-4201-a231-700c585fbf6b",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        304
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "NaDhx5ysU6RqcVFw",
+          "name": "AiAgent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"employee\": \"Questions Expert\"\n}"
+      },
+      "id": "504c3296-9964-410f-92b8-3275fd8f06c3",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -416,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.employee }}",
+                    "rightValue": "Questions Expert",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f4fea2bd-6ad3-4929-8aba-27e3c9b44645"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Questions Expert"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ca76b491-36ca-4f35-a4fe-6cd7325a7e65",
+                    "leftValue": "={{ $json.output.employee }}",
+                    "rightValue": "Generalist",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Generalist"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ef86218b-2d80-4e12-bd67-003803070946",
+                    "leftValue": "={{ $json.output.employee }}",
+                    "rightValue": "Orders Expert",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Orders Expert"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Fallback (General)"
+        }
+      },
+      "id": "2d8940d3-0541-4345-9b6e-f6430de0773b",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -192,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6511f394-74b7-412a-9f96-f94917d30b88",
+              "name": "System Prompt",
+              "value": "###ROLE\nYou are the KD restaurant expert who answers customer questions about the restaurant and its menu.\n\n###TOOLS\n--restaurant knowledge base: the ONLY source of truth for restaurant information (location, address, opening hours, contact details, menu, prices, delivery, offers).\n\n###RULES\n- ALWAYS call the restaurant knowledge base tool BEFORE answering any question about the restaurant or the menu, even if you think you already know the answer or it appeared earlier in the conversation.\n- Answer ONLY with information returned by the knowledge base. NEVER invent or guess any detail (addresses, landmarks, map links, phone numbers, hours, prices, dishes).\n- If the knowledge base does not contain the requested information, say clearly that this information is not available right now and offer to help with something else.\n- Ignore restaurant details from earlier messages in the conversation if they differ from the knowledge base; the knowledge base is always correct.\n- Reply in the same language the customer used.\n- The knowledge base may contain internal notes saying the prices, menu, or contact details are \"default\", \"hypothetical\", \"for testing\", or \"for demo purposes\" (e.g. \"افتراضية\", \"لأغراض التجربة\", \"مخصصة للاختبار\"). These are internal notes: NEVER mention them, never add any disclaimer like this, and present all information as the restaurant's real, official information.\n- Ignore any unrelated text in the knowledge base results such as English recipe titles, website names, or links to other restaurants; never include them in your reply.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7769ff64-2000-4fd1-885e-a201fba954f7",
+      "name": "Question System prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Telegram Trigger').item.json.message.text }}",
+        "options": {
+          "systemMessage": "={{ $json['System Prompt'] }}"
+        }
+      },
+      "id": "3c485f81-f920-4773-a134-49e25e1a3a68",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        368,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-6-luna",
+        "options": {
+          "maxTokens": 2048,
+          "temperature": 0.2
+        }
+      },
+      "id": "8867e792-bb79-490f-b49a-1f0b2f1194bb",
+      "name": "OpenRouter Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        192,
+        368
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "NaDhx5ysU6RqcVFw",
+          "name": "AiAgent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "id": "341fc4a2-0e8e-4d9e-a418-dc7dd41db50b",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        352,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1xp2XPWkxd0feCNM9_S89cg62k-vt7FWNiwwwZkqRIRU",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xp2XPWkxd0feCNM9_S89cg62k-vt7FWNiwwwZkqRIRU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1154650282,
+          "mode": "list",
+          "cachedResultName": "KD_orders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xp2XPWkxd0feCNM9_S89cg62k-vt7FWNiwwwZkqRIRU/edit#gid=1154650282"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now }}",
+            "Item": "={{ $fromAI(\"order_item\") }}",
+            "Price": "={{ $fromAI(\"order_price\") }}",
+            "Order_id": "={{ $fromAI(\"Order_id\") }}",
+            "Name": "={{ $fromAI(\"client_name\") }}",
+            "Phone_Number": "={{ $fromAI(\"client_phone\") }}",
+            "Adress": "={{ $fromAI(\"client_adress\") }}",
+            "Statue": "inkitchen"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Item",
+              "displayName": "Item",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Price",
+              "displayName": "Price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order_id",
+              "displayName": "Order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone_Number",
+              "displayName": "Phone_Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Adress",
+              "displayName": "Adress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Statue",
+              "displayName": "Statue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "99298d46-564b-4113-9d81-d6bdeceb4d2d",
+      "name": "Orders_sheet_write_tool",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        656,
+        528
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "P1hu9LuVtuU2iYK7",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1xp2XPWkxd0feCNM9_S89cg62k-vt7FWNiwwwZkqRIRU",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xp2XPWkxd0feCNM9_S89cg62k-vt7FWNiwwwZkqRIRU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1154650282,
+          "mode": "list",
+          "cachedResultName": "KD_orders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xp2XPWkxd0feCNM9_S89cg62k-vt7FWNiwwwZkqRIRU/edit#gid=1154650282"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order_id": "={{ $fromAI(\"order_id\") }}",
+            "Statue": "canceld"
+          },
+          "matchingColumns": [
+            "Order_id"
+          ],
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Item",
+              "displayName": "Item",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Price",
+              "displayName": "Price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order_id",
+              "displayName": "Order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone_Number",
+              "displayName": "Phone_Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Adress",
+              "displayName": "Adress",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Statue",
+              "displayName": "Statue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "9a7475b0-8209-422c-9ee6-52bb9c0186eb",
+      "name": "order_cancel_tool",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        400,
+        624
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "P1hu9LuVtuU2iYK7",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1xp2XPWkxd0feCNM9_S89cg62k-vt7FWNiwwwZkqRIRU",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xp2XPWkxd0feCNM9_S89cg62k-vt7FWNiwwwZkqRIRU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1154650282,
+          "mode": "list",
+          "cachedResultName": "KD_orders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xp2XPWkxd0feCNM9_S89cg62k-vt7FWNiwwwZkqRIRU/edit#gid=1154650282"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Order_id",
+              "lookupValue": "={{ $fromAI(\"Order_id\") }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b47a2dde-d1e6-4165-a4ce-8464c488f34d",
+      "name": "order_read_sheet_tool",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        576,
+        432
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "P1hu9LuVtuU2iYK7",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const orderId=(Math.floor(1000 + Math.random() *9000)).toString();\nreturn orderId;"
+      },
+      "id": "39d0cae8-bf67-41cd-b1a4-bea73ff80c95",
+      "name": "Code Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "KD resturant Knowledge Base containing the resturant menu and information about resturant use this knowledge base to answer customar questions accuratly ",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "id": "c6c66a76-3d6b-492b-b3c0-d852b2c7633d",
+      "name": "restaurant knowledge base",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        416
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "Lz9dvu80gTnlOaLd",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "caf3c354-e252-4efa-8d63-7eb8a47cfac6",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        624
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "V3fBp4n0GAswcu7r",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "28b8cd69-320a-476a-8ab8-6e5b03832a0c",
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        128
+      ],
+      "webhookId": "ef30ad4c-4d60-4bfd-8f1c-0a27b5dc2c92",
+      "credentials": {
+        "telegramApi": {
+          "id": "xHW5FK4259o9wvAD",
+          "name": "kdresturant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1c8d644-dd9d-4057-838f-082876821e58",
+              "name": "System Prompt",
+              "value": "You are the KD restaurant customer support expert. Greet customers politely and help them. If the customer asks anything about the restaurant or the menu (location, hours, contact, dishes, prices), call the restaurant knowledge base tool first and answer ONLY from its results. Never invent restaurant details. If the information is not in the knowledge base, say it is not available. Reply in the same language the customer used. The knowledge base may contain internal notes saying prices or contact details are default, hypothetical, or for testing (e.g. افتراضية، لأغراض التجربة، مخصصة للاختبار): NEVER mention these notes or add any such disclaimer; present the information as the restaurant's real information. Ignore unrelated text in the results such as English recipe titles or other restaurant names.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "691d1eae-1383-47ab-b20f-70a330cf8d81",
+      "name": "General System prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        0,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3ee8c787-1eff-4df3-85af-9f6af5aafdd6",
+              "name": "System Prompt",
+              "value": "###ROLE\nYou are responsible for order management in our restaurant: creating orders, cancelling orders, and answering questions about existing orders.\n\n###TOOLS\n--order_read_sheet_tool: use it to look up an order's details after getting the Order_id from the user.\n\n--Code Tool: use it to generate a unique 4-digit Order_id BEFORE calling Orders_sheet_write_tool.\n\n--Orders_sheet_write_tool: use it to add a new confirmed order to the sheet.\n\n--order_cancel_tool: use it to cancel an existing order by Order_id.\n\n--restaurant knowledge base: use it to answer questions about the restaurant and menu.\n\n###INSTRUCTIONS\n\nWhen taking a new order, ask the user for all required data: Name, Phone Number, Address, and the Order/items. Make sure to collect ALL of this data, and confirm the full order back to the user, before calling Orders_sheet_write_tool.\n\nIf a user wants to cancel an order, ask for their Order_id if it isn't already in the conversation, then confirm before calling order_cancel_tool.\n\nIf order_read_sheet_tool or order_cancel_tool can't find an order for the given Order_id, tell the user the order wasn't found and ask them to double-check the Order_id.\n\nAlways generate the Order_id using Code Tool before adding a new order — never invent one yourself.\n\nThe knowledge base may contain internal notes saying prices or contact details are default, hypothetical, or for testing (e.g. افتراضية، لأغراض التجربة، مخصصة للاختبار). NEVER mention these notes or add any such disclaimer to the customer.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6328f67c-1602-4225-a2db-7635f920dd87",
+      "name": "Order expert",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        0,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Question System prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "General System prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Order expert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "General System prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question System prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orders_sheet_write_tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "order_cancel_tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "order_read_sheet_tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "restaurant knowledge base": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "restaurant knowledge base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "General System prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order expert": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4c4a1c1c-6782-488c-8c66-20ff21418751",
+  "meta": {
+    "instanceId": "2294739657b45900ebf26a43b145ed4918ca7a00bffaa965c7d983685aef6d0d"
+  },
+  "nodeGroups": [],
+  "id": "5xSzF7UV6zPHuZGu",
+  "tags": []
+}
