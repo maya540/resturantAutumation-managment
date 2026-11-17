@@ -16,13 +16,7 @@
         -784,
         96
       ],
-      "webhookId": "07fcb9ac-68c3-4bd2-ab70-9a89a84675fe",
-      "credentials": {
-        "telegramApi": {
-          "id": "xHW5FK4259o9wvAD",
-          "name": "kdresturant"
-        }
-      }
+      "webhookId": "07fcb9ac-68c3-4bd2-ab70-9a89a84675fe"
     },
     {
       "parameters": {
@@ -60,13 +54,7 @@
       "position": [
         -624,
         304
-      ],
-      "credentials": {
-        "openRouterApi": {
-          "id": "NaDhx5ysU6RqcVFw",
-          "name": "AiAgent"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -228,13 +216,7 @@
       "position": [
         192,
         368
-      ],
-      "credentials": {
-        "openRouterApi": {
-          "id": "NaDhx5ysU6RqcVFw",
-          "name": "AiAgent"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -366,13 +348,7 @@
       "position": [
         656,
         528
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "P1hu9LuVtuU2iYK7",
-          "name": "Google Sheets account"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -498,13 +474,7 @@
       "position": [
         400,
         624
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "P1hu9LuVtuU2iYK7",
-          "name": "Google Sheets account"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -539,13 +509,7 @@
       "position": [
         576,
         432
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "P1hu9LuVtuU2iYK7",
-          "name": "Google Sheets account"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -579,13 +543,7 @@
       "position": [
         720,
         416
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "Lz9dvu80gTnlOaLd",
-          "name": "Supabase account"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -598,13 +556,7 @@
       "position": [
         848,
         624
-      ],
-      "credentials": {
-        "openAiApi": {
-          "id": "V3fBp4n0GAswcu7r",
-          "name": "n8n free OpenAI API credits"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -622,13 +574,7 @@
         832,
         128
       ],
-      "webhookId": "ef30ad4c-4d60-4bfd-8f1c-0a27b5dc2c92",
-      "credentials": {
-        "telegramApi": {
-          "id": "xHW5FK4259o9wvAD",
-          "name": "kdresturant"
-        }
-      }
+      "webhookId": "ef30ad4c-4d60-4bfd-8f1c-0a27b5dc2c92"
     },
     {
       "parameters": {
